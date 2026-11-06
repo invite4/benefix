@@ -1,0 +1,8 @@
+{
+  "name": "benefix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Benefix: free-to-join micro-task rewards app on Vercel + Supabase Postgres",
+  "engines": { "node": "22.x" },
+  "dependencies": { "pg": "^8.13.1" }
+}
