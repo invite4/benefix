@@ -309,6 +309,18 @@ R('POST', '/api/admin/users/:id/delete', 'admin', async (c) => {
   }); return { data: { ok: true } };
 });
 
+function dbHint(e) {
+  const c = e && e.code, m = String((e && e.message) || '');
+  if (c === '28P01' || /password authentication failed/i.test(m)) return 'Database password is wrong. Check DATABASE_URL.';
+  if (/tenant or user not found/i.test(m)) return 'Database username or project code is wrong. Check DATABASE_URL.';
+  if (c === 'ERR_INVALID_URL' || /invalid url|invalid connection/i.test(m)) return 'DATABASE_URL is not a valid link. Remove any [ ] brackets or spaces.';
+  if (c === 'ENOTFOUND' || c === 'EAI_AGAIN') return 'Database address not found. Check DATABASE_URL, and that the password has no @ or spaces.';
+  if (c === 'ECONNREFUSED' || c === 'ETIMEDOUT' || c === 'ENETUNREACH') return 'Cannot reach the database. Use the Transaction pooler string (port 6543).';
+  if (/ssl|certificate/i.test(m)) return 'Database secure connection failed. Use the Transaction pooler string.';
+  if (c && /^[0-9A-Z]{5}$/.test(c)) return 'Database error (code ' + c + ').';
+  return null;
+}
+
 /* ---------- request handler ---------- */
 async function bodyOf(req) {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
@@ -348,6 +360,6 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     if (e instanceof HttpError) return json(e.status, { error: e.message });
     if (e && e.code === '23505') return json(400, { error: 'That email or username is already registered' });
-    console.error(e); return json(500, { error: 'Server error' });
+    console.error(e); return json(500, { error: dbHint(e) || 'Server error' });
   }
 };
